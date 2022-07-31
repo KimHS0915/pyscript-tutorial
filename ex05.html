@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+    <title>Simple todo list</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Simple todo list</h1>
+      <br>
+      <div class="row">
+        <div class="col-6">
+          <input type="text" id="todo-input" class="form-control" placeholder="Write a todo" />
+        </div>
+        <div class="col-1">
+          <button type="submit" id="btn" type="button" class="form-control btn btn-success" pys-onClick="add_todo">Add</button>
+        </div>
+      </div>
+      <br>
+      <br>
+      <div id="todo_list"></div>
+      <template id="todo-template">
+        <div class="form-check">
+          <label class="form-check-label">
+            <input class="form-check-input" type="checkbox" />
+            <h6></h6>
+          </label>
+        </div>
+      </template>
+    </div>
+    <py-script>
+
+      import time
+
+      todo_input = Element("todo-input")
+      todo_list = Element("todo_list")
+      todo_template = Element("todo-template").select("div", from_content=True)
+      todos = []
+
+      def add_todo(*args, **kwargs):
+        text = todo_input.element.value
+        if not text:
+          text = "Empty"
+        id = time.time()
+        todo = {
+          "id": id,
+          "text": text,
+          "done": False,
+        }
+        
+        todos.append(todo)
+        new_todo = todo_template.clone(todo["id"], to=todo_list)
+        new_todo_text = new_todo.select("h6")
+        new_todo_text.element.innerText = todo["text"]
+        todo_list.element.appendChild(new_todo.element)
+        todo_input.clear()
+      
+      def enter_todo(e):
+        if e.key == "Enter":
+          add_todo()
+        
+      todo_input.element.onkeypress = enter_todo
+
+    </py-script>
+  </body>
+</html>
