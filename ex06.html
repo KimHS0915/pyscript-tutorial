@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+    <py-env>
+        - numpy
+        - matplotlib
+    </py-env>
+    <title>Matplotlib</title>
+  </head>
+  <body>
+    <div id="plt"></div>
+    <py-script output="plt">
+
+      import numpy as np
+      import matplotlib.pyplot as plt
+
+      x1 = np.arange(1, 10)
+      x2 = np.arange(1, 20)
+      y1 = x1 * 2
+      y2 = x2 * 2
+
+      fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+      ax1.plot(x1, y1, color="red", marker="o", linestyle="dashed", 
+                linewidth=2, markersize=6, label="example1")
+      ax2.bar(x2, y2, color="blue", label="example2")
+      ax1.set_xlabel("x1")
+      ax1.set_ylabel("y1")
+      ax2.set_xlabel("x2")
+      ax2.set_ylabel("y2")
+      ax1.set_title("Example1")
+      ax2.set_title("Example2")
+
+      fig
+      
+    </py-script>
+  </body>
+</html>
