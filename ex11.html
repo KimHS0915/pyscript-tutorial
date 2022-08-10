@@ -22,6 +22,7 @@
     <title>Clustering</title>
   </head>
   <body>
+    <br>
     <py-box>
       <py-title>Clustering</py-title>
     </py-box>
@@ -30,7 +31,12 @@
       <div id="algo_selector"></div>
     </py-box>
     <py-box>
-      <div id="slider"></div>
+      <div id="n_clusters_slider"></div>
+      <div id="bandwidth_slider"></div>
+    </py-box>
+    <py-box>
+      <div id="min_samples_slider"></div>
+      <div id="eps_slider"></div>
     </py-box>
     <py-box>
       <div id="plt"></div>
@@ -52,15 +58,29 @@
       clustering_algorithms = ["K-Means", "Mean Shift", "GMM", "DBSCAN"]
       datasets = ["Blob", "Circle"]
 
-      slider = pn.widgets.IntSlider(
-        start=1, end=7, step=1, name="Number of Cluster"
-      ).servable(target="slider")
       algo_selector = pn.widgets.Select(
-        name="Algorithm", options=clustering_algorithms, value="Select algorithm"
+        name="Algorithm", options=clustering_algorithms
       ).servable(target="algo_selector")
+
       data_selector = pn.widgets.Select(
-        name="Data", options=datasets, value="Select Data"
+        name="Data", options=datasets
       ).servable(target="data_selector")
+
+      n_clusters_slider = pn.widgets.IntSlider(
+        start=1, end=7, step=1, value=3, name="Number of Cluster"
+      ).servable(target="n_clusters_slider")
+
+      min_samples_slider = pn.widgets.IntSlider(
+        start=4, end=12, step=2, value=8, name="Minimum number of samples"
+      ).servable(target="min_samples_slider")
+
+      eps_slider = pn.widgets.FloatSlider(
+        start=0.1, end=1.2, step=0.1, value=0.2, name="Epsilon"
+      ).servable(target="eps_slider")
+
+      bandwidth_slider = pn.widgets.FloatSlider(
+        start=0.5, end=2.5, step=0.2, value=1.3, name="Bandwidth"
+      ).servable(target="bandwidth_slider")
 
 
       def prepare_data(data):
@@ -83,7 +103,7 @@
         fig, ax = plt.subplots()
         df['cluster_labels'] = cluster_labels
         unique_labels = np.unique(cluster_labels)
-        markers = ['o', 's', '^', 'P', 'D', 'H', 'x']
+        markers = ["o", "s", "p", "v", "d", "+", "1", "D", "|", "x"]
 
         for label in unique_labels:
           label_cluster = df[df['cluster_labels'] == label]          
@@ -101,38 +121,46 @@
         return fig
 
      
-      def get_plot(X, df, algorithm, n_clusters):
+      def get_plot(X, df, params):
 
-        if algorithm == "K-Means":
-          kmeans = KMeans(n_clusters=n_clusters)
+        if params["algorithm"] == "K-Means":
+          kmeans = KMeans(n_clusters=params["n_clusters"])
           cluster_labels = kmeans.fit_predict(X)          
           centers = kmeans.cluster_centers_
           return draw_plot(df, cluster_labels, centers)
 
-        elif algorithm == "Mean Shift":
-          meanshift = MeanShift(bandwidth=1)
+        elif params["algorithm"] == "Mean Shift":
+          meanshift = MeanShift(bandwidth=params["bandwidth"])
           cluster_labels = meanshift.fit_predict(X)
           centers = meanshift.cluster_centers_
           return draw_plot(df, cluster_labels, centers)
 
-        elif algorithm == "GMM":
-          gmm = GaussianMixture(n_components=n_clusters, random_state=3)
+        elif params["algorithm"] == "GMM":
+          gmm = GaussianMixture(n_components=params["n_clusters"])
           cluster_labels = gmm.fit_predict(X)
           return draw_plot(df, cluster_labels)
 
         else:
-          dbscan = DBSCAN(eps=0.2, min_samples=8, metric='euclidean')
+          dbscan = DBSCAN(eps=params["eps"], min_samples=params["min_samples"], metric='euclidean')
           cluster_labels = dbscan.fit_predict(X)
-          return draw_plot(df, cluster_labels)     
+          return draw_plot(df, cluster_labels)
         
 
       plot = pn.pane.Matplotlib().servable(target="plt")
 
 
-      @pn.depends(algo_selector, data_selector, slider, watch=True)
+      @pn.depends(algo_selector, data_selector, n_clusters_slider, 
+                  min_samples_slider, eps_slider, bandwidth_slider, watch=True)
       def update_plot(*event):
+        params = {
+          "algorithm": algo_selector.value, 
+          "n_clusters": n_clusters_slider.value,
+          "min_samples": min_samples_slider.value,
+          "eps": eps_slider.value,
+          "bandwidth": bandwidth_slider.value, 
+        }
         X, df = prepare_data(data_selector.value)
-        plot.object = get_plot(X, df, algo_selector.value, slider.value)      
+        plot.object = get_plot(X, df, params)
 
 
       update_plot()
