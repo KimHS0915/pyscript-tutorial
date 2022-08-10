@@ -26,7 +26,10 @@
       <py-title>Clustering</py-title>
     </py-box>
     <py-box>
-      <div id="selector"></div>
+      <div id="data_selector"></div>
+      <div id="algo_selector"></div>
+    </py-box>
+    <py-box>
       <div id="slider"></div>
     </py-box>
     <py-box>
@@ -36,6 +39,7 @@
 
       import panel as pn
       from sklearn.datasets import make_blobs
+      from sklearn.datasets import make_circles
       from sklearn.cluster import KMeans
       from sklearn.cluster import MeanShift
       from sklearn.mixture import GaussianMixture
@@ -46,22 +50,36 @@
 
 
       clustering_algorithms = ["K-Means", "Mean Shift", "GMM", "DBSCAN"]
+      datasets = ["Blob", "Circle"]
 
       slider = pn.widgets.IntSlider(
         start=1, end=7, step=1, name="Number of Cluster"
       ).servable(target="slider")
-      selector = pn.widgets.Select(
-        name="algorithm", options=clustering_algorithms, value="Select algorithm"
-      ).servable(target="selector")
-
-      X, y = make_blobs(n_samples=200, n_features=2, centers=3, 
-                        cluster_std=0.8, random_state=0)
-
-      df = pd.DataFrame(data=X, columns=['ftr1', 'ftr2'])
-      df['target'] = y
+      algo_selector = pn.widgets.Select(
+        name="Algorithm", options=clustering_algorithms, value="Select algorithm"
+      ).servable(target="algo_selector")
+      data_selector = pn.widgets.Select(
+        name="Data", options=datasets, value="Select Data"
+      ).servable(target="data_selector")
 
 
-      def draw_plot(cluster_labels, centers=None):
+      def prepare_data(data):
+
+        if data == "Blob":
+          X, y = make_blobs(n_samples=300, n_features=2, centers=3, 
+                            cluster_std=0.6, random_state=0)
+          df = pd.DataFrame(data=X, columns=["ftr1", "ftr2"])
+          df["target"] = y
+
+        else:
+          X, y = make_circles(n_samples=500, shuffle=True, noise=0.05, random_state=0, factor=0.5)
+          df = pd.DataFrame(data=X, columns=['ftr1', 'ftr2'])
+          df['target'] = y
+
+        return X, df
+
+
+      def draw_plot(df, cluster_labels, centers=None):
         fig, ax = plt.subplots()
         df['cluster_labels'] = cluster_labels
         unique_labels = np.unique(cluster_labels)
@@ -83,36 +101,39 @@
         return fig
 
      
-      def get_plot(algorithm, n_clusters):
+      def get_plot(X, df, algorithm, n_clusters):
 
         if algorithm == "K-Means":
           kmeans = KMeans(n_clusters=n_clusters)
           cluster_labels = kmeans.fit_predict(X)          
           centers = kmeans.cluster_centers_
-          return draw_plot(cluster_labels, centers)
+          return draw_plot(df, cluster_labels, centers)
 
         elif algorithm == "Mean Shift":
           meanshift = MeanShift(bandwidth=1)
           cluster_labels = meanshift.fit_predict(X)
           centers = meanshift.cluster_centers_
-          return draw_plot(cluster_labels, centers)
+          return draw_plot(df, cluster_labels, centers)
 
         elif algorithm == "GMM":
-          gmm = GaussianMixture(n_components=3, random_state=3)
+          gmm = GaussianMixture(n_components=n_clusters, random_state=3)
           cluster_labels = gmm.fit_predict(X)
-          return draw_plot(cluster_labels)
+          return draw_plot(df, cluster_labels)
 
-        elif algorithm == "DBSCAN":
-          dbscan = DBSCAN(eps=0.6, min_samples=8, metric='euclidean')
+        else:
+          dbscan = DBSCAN(eps=0.2, min_samples=8, metric='euclidean')
           cluster_labels = dbscan.fit_predict(X)
-          return draw_plot(cluster_labels)
+          return draw_plot(df, cluster_labels)     
         
 
       plot = pn.pane.Matplotlib().servable(target="plt")
 
-      @pn.depends(selector, slider, watch=True)
+
+      @pn.depends(algo_selector, data_selector, slider, watch=True)
       def update_plot(*event):
-        plot.object = get_plot(selector.value, slider.value)
+        X, df = prepare_data(data_selector.value)
+        plot.object = get_plot(X, df, algo_selector.value, slider.value)      
+
 
       update_plot()
 
